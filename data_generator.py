@@ -1,3 +1,4 @@
+import csv
 '''
 You should implement this script to generate test data for your
 merge sort program.
@@ -23,18 +24,24 @@ def generate_data(schema, out_file, nrecords):
   The output file must be in csv format, with a new line
   character at the end of every record.
   '''
-  print "Generating %d records" % nrecords
+
+  records = []
+  with open(out_file, 'w') as out:
+    for attribute in schema:
+      print(attribute['name'])
+      print(attribute['length'])
+
+  print("Generating %d records" % nrecords)
 
 if __name__ == '__main__':
   import sys, json
   if not len(sys.argv) == 4:
-    print "data_generator.py <schema json file> <output csv file> <# of records>"
+    print("data_generator.py <schema json file> <output csv file> <# of records>")
     sys.exit(2)
 
   schema = json.load(open(sys.argv[1]))
   output = sys.argv[2]
   nrecords = int(sys.argv[3])
-  print schema
+  print(schema)
   
   generate_data(schema, output, nrecords)
-
