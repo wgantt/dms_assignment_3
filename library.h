@@ -1,5 +1,7 @@
 #include <cstdio>
 
+using namespace std;
+
 /**
  * An attribute schema. You should probably modify
  * this to add your own fields.
@@ -19,7 +21,7 @@ typedef struct {
   int nattrs;
   int* sort_attrs;
   int n_sort_attrs;
-  Attribute* attrs[];
+  Attribute* attrs;
 } Schema;
 
 /**
