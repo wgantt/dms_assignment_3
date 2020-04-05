@@ -1,4 +1,9 @@
 #include <cstdio>
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include <vector>
+#include <functional>
 
 using namespace std;
 
@@ -37,7 +42,7 @@ typedef struct {
  * Creates sorted runs of length `run_length` in
  * the `out_fp`.
  */
-void mk_runs(FILE *in_fp, FILE *out_fp, long run_length, Schema *schema);
+void mk_runs(char *in_filename, char *out_filename, long run_length, Schema *schema);
 
 /**
  * The iterator helps you scan through a run.
@@ -49,7 +54,7 @@ class RunIterator {
    * scan through a run that starts at `start_pos`
    * with length `run_length`.
    */
-  RunIterator(FILE *fp, long start_pos, long run_length, long buf_size,
+  RunIterator(char *filename, long start_pos, long run_length, long buf_size,
               Schema *schema);
 
   /**
@@ -75,6 +80,5 @@ class RunIterator {
  * Write the merged runs to `out_fp` starting at position `start_pos`.
  * Cannot use more than `buf_size` of heap memory allocated to `buf`.
  */
-void merge_runs(RunIterator* iterators[], int num_runs, FILE *out_fp,
+void merge_runs(RunIterator* iterators[], int num_runs, FILE *out_filename,
                 long start_pos, char *buf, long buf_size);
-

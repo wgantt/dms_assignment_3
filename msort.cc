@@ -1,14 +1,12 @@
 #include <cstdlib>
 #include <cstdio>
-#include <iostream>
-#include <fstream>
 
 #include "library.h"
 #include "json/json.h"
 
 using namespace std;
 
-int main(int argc, const char* argv[]) {
+int main(int argc, char* argv[]) {
   if (argc < 7) {
     cout << "ERROR: invalid input parameters!" << endl;
     cout << "Please enter <schema_file> <input_file> <output_file> <mem_capacity> <k> <sorting_attributes>" << endl;
@@ -17,11 +15,13 @@ int main(int argc, const char* argv[]) {
 
   // Read in command line arguments
   string schema_file(argv[1]);
-  string input_file(argv[2]);
-  string output_file(argv[3]);
+  char *input_file = argv[2];
+  char *output_file = argv[3];
   long mem_capacity = atol(argv[4]);
   int k = atoi(argv[5]);
   string sort_attribute(argv[6]); // assuming a single sort attribute for now
+
+  cout << schema_file << endl;
 
   // Parse the schema JSON file
   Json::Value json_schema;
@@ -70,6 +70,8 @@ int main(int argc, const char* argv[]) {
   }
 
   // Do the sort
+  mk_runs(input_file, output_file, 10, &schema);
+
   // Your implementation
   
   return 0;
