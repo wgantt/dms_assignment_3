@@ -1,7 +1,7 @@
 import csv    # for writing the output CSV
 import string # for random string attribute generation
 import random # for random string attribute generation
-import numpy as np   # for rounding operations in random sampling
+import numpy as np   # for random sampling
 
 '''
 You should implement this script to generate test data for your
@@ -21,7 +21,7 @@ def sample_uniform(range_min, range_max, length, is_int=True):
   if is_int:
     return random.choice([i for i in range(range_min, range_max + 1)])
   else:
-    return np.round(np.random.uniform(range_min, range_max), decimals=length) 
+    return str(np.random.uniform(range_min, range_max))[:length]
 
 def sample_normal(mu, sigma, range_min, range_max, length, is_int=False):
   """
@@ -30,12 +30,12 @@ def sample_normal(mu, sigma, range_min, range_max, length, is_int=False):
   sample = np.random.normal(loc=mu, scale=sigma)
 
   if not is_int:
-    sample = np.round(sample, decimals=length)
+    sample = str(sample)[:length]
 
   # ensure sample is within [range_min, range_max]
-  if sample > range_max:
+  if float(sample) > range_max:
     return range_max
-  elif sample < range_min:
+  elif float(sample) < range_min:
     return range_min
   else:
     return sample

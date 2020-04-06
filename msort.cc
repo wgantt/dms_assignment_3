@@ -59,8 +59,9 @@ int main(int argc, char* argv[]) {
     strcpy(attribute.name, attr_name.c_str());
     attribute.length = attr_len;
 
-    // Add attribute to the schema
+    // Add attribute to the schema and increment record length
     schema.attrs[i] = attribute;
+    schema.total_record_length += attr_len;
 
     // If this is a sorting attribute, add it to the list
     // of sort attributes
