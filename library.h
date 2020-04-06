@@ -89,6 +89,8 @@ public:
   RunIterator(char *filename, long start_pos, long run_length, long buf_size,
               Schema *schema);
 
+  ~RunIterator();
+
   /**
    * reads the next record
    */

@@ -21,8 +21,6 @@ int main(int argc, char* argv[]) {
   int k = atoi(argv[5]);
   string sort_attribute(argv[6]); // assuming a single sort attribute for now
 
-  cout << schema_file << endl;
-
   // Parse the schema JSON file
   Json::Value json_schema;
   Json::Reader json_reader;

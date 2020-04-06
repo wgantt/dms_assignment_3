@@ -103,13 +103,15 @@ void merge_runs(RunIterator* iterators[], int num_runs, char *out_filename,
 
 RunIterator::RunIterator(char *filename, long start_pos, long run_length, long buf_size,
               Schema *schema) {
+
+	// Initialize member variables
 	this->filename = filename;
 	this->start_pos = start_pos;
 	this->run_length = run_length;
 	this->buf_size = buf_size;
-	this->buf = new char[buf_size]; // Will the destructor automatically free this?
 	this->record_idx = 0;
 	this->schema = schema;
+	this->buf = new char[buf_size];
 	this->cur_record = new char[this->schema->total_record_length + 1];
 
 	// Open the file for reading
@@ -142,12 +144,18 @@ RunIterator::RunIterator(char *filename, long start_pos, long run_length, long b
 	in_file.close();
 }
 
+RunIterator::~RunIterator() {
+	free(this->buf);
+	free(this->cur_record);
+}
+
 char* RunIterator::next() {
 	// Copy record from buffer
 	int record_len = this->schema->total_record_length + 1;
 	strncpy(this->cur_record, &this->buf[record_idx * record_len], record_len);
 
-	// Shouldn't have to do this, but it's necessary right now
+	// Shouldn't have to explicitly null-terminate,
+	// but didn't take the time to figure a way around it
 	this->cur_record[record_len - 1] = '\0';
 
 	// Increment iterator index
