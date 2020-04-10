@@ -87,22 +87,18 @@ int main(int argc, char* argv[]) {
   RunIterator* iters[10];
   for (int i = 0; i < 10; i++) {
     iters[i] = new RunIterator("new.out", 270 * i, run_length, 260, &schema);
-    // while(iters[i]->has_next()) {
-    //   cout << iters[i]->next() << endl;
-    // }
-    // cout << endl;
   }
 
   // Second phase: Do in-memory sort
-  // Attribute sort_attr = schema.attrs[schema.sort_attrs[0]];
-  // bool is_numeric = strcmp(sort_attr.type, INTEGER) || strcmp(sort_attr.type, FLOAT);
-  // RecordCompare rc {sort_attr.offset, sort_attr.length, is_numeric};
-  // merge_runs(iters, num_runs, "out", 0, 260, rc);
+  Attribute sort_attr = schema.attrs[schema.sort_attrs[0]];
+  bool is_numeric = strcmp(sort_attr.type, INTEGER) || strcmp(sort_attr.type, FLOAT);
+  RecordCompare rc {sort_attr.offset, sort_attr.length, is_numeric};
+  merge_runs(iters, num_runs, "new.out", 0, 270, rc);
 
+  // Free the iterators
   for (int i = 0; i < 10; i++) {
     free(iters[i]);
   }
-  // free(iters);
   
   return 0;
 }

@@ -125,23 +125,35 @@ void merge_runs(RunIterator* iterators[], int num_runs, char *out_filename,
 		cur_record.data = iterators[i]->next();
 		cur_record.buf_idx = i;
 		pq.push(cur_record);
-		cout << cur_record.data << endl;
 	}
 
-	cout << endl << endl;
+	// Stores the next record to be added to the priority queue
+	BufRecord next_record;
 
-	while (!pq.empty()) {
-		cout << pq.top().data << endl;
-		pq.pop();
-	}
+	// The number of records currently stored in the buffer
+	int records_in_buf = 0;
 
 	// Continue merging records until there are no more
-	BufRecord next_record;
 	while (!pq.empty()) {
 
 		// Pop the next record from the top of the priority queue
 		BufRecord cur_record = pq.top();
 		pq.pop();
+
+		// Copy it into the output buffer
+		strncat(buf, cur_record.data, sizeof(char) * strlen(cur_record.data));
+		records_in_buf++;
+
+		// If the output buffer is full (or nearly so), flush it to disk and clear the buffer
+		if (strlen(buf) + strlen(cur_record.data) > buf_size) {
+			string s = string(buf);
+			int record_len = strlen(cur_record.data);
+			for (int i = 0; i < records_in_buf; i++) {
+				out << s.substr(i * record_len, record_len) << endl;
+			}
+			memset(buf,0,buf_size);
+			records_in_buf = 0;
+		}
 
 		// Check the buffer that this record came from to see whether
 		// it contains any more records. If it does, increment the
@@ -151,17 +163,7 @@ void merge_runs(RunIterator* iterators[], int num_runs, char *out_filename,
 			next_record.buf_idx = cur_record.buf_idx;
 			pq.push(next_record);
 		}
-
-		// Copy it into the output buffer
-		strcat(buf, cur_record.data);
-
-		// If the output buffer is full (or nearly so), flush it to disk and clear the buffer
-		if (strlen(buf) + strlen(cur_record.data) > buf_size) {
-			memset(buf,0,buf_size);
-		}
 	}
-
-	cout << "pq is now empty" << endl;
 
 	// Close the output file and ree the output buffer
 	out.close();
