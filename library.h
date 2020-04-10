@@ -3,15 +3,20 @@
 #include <sstream>
 #include <fstream>
 #include <vector>
+#include <queue>
 #include <functional>
 
 using namespace std;
+
+// ADD NAMED CONSTANTS FOR ATTRIBUTE TYPES
+static const char* STRING = "string";
+static const char* INTEGER = "integer";
+static const char* FLOAT = "float";
 
 /**
  * TODO:
  *   - Figure out how, if at all, you intend to use data structures other
  *     than Schema.
- *   - Correctly set total_record_length for Schema
  */
 
 /**
@@ -20,7 +25,9 @@ using namespace std;
  */
 typedef struct {
   char *name;
+  char *type;
   int length;
+  int offset;
 } Attribute;
 
 /**
@@ -47,12 +54,67 @@ typedef struct {
 } Record;
 
 /**
+ * Stores a record, along with the index of the input buffer
+ * that it came from
+ */
+typedef struct {
+  char* data;
+  int buf_idx;
+} BufRecord;
+
+/**
+ * Function object for comparing two records
+ */
+typedef struct {
+
+  // The byte offset of the sorting attribute within the string
+  int offset;
+
+  // The length of the sorting attribute
+  int attr_len;
+
+  // Whether the sorting attribute is numeric
+  bool is_numeric;
+
+  // The comparison operator. Handles both string and numerical attributes.
+  bool operator() (char* r1, char* r2) {
+    string s1(r1);
+    string s1_sort_attr = s1.substr(offset, attr_len);
+    string s2(r2);
+    string s2_sort_attr = s2.substr(offset, attr_len);
+    if (is_numeric) {
+      return atof(s1_sort_attr.c_str()) < atof(s2_sort_attr.c_str());
+    } else {
+      return s1_sort_attr.compare(s2_sort_attr);
+    }
+  }
+} RecordCompare;
+
+/**
+ * Comparison function object for comparing buffered records during the merge
+ */
+typedef struct {
+
+  // Based on a RecordCompare struct
+  RecordCompare rc;
+
+  bool operator() (BufRecord r1, BufRecord r2) { return !rc(r1.data, r2.data); }
+
+} BufRecordCompare;
+
+/**
+ * Priority queue for performing k-way merge
+ */
+typedef priority_queue<BufRecord,vector<BufRecord>,BufRecordCompare> MergePriorityQueue;
+
+/**
  * The iterator helps you scan through a run.
  * you can add additional members as your wish
  */
 class RunIterator {
 
-private:
+// TODO: make private when finished testing
+public:
 
   // The name of the file containing the records for this run
   char *filename;
@@ -78,8 +140,6 @@ private:
 
   // The current record the iterator is pointing to
   char *cur_record;
-
-public:
 
   /**
    * Creates an interator using the `buf_size` to
@@ -116,4 +176,4 @@ void mk_runs(char *in_filename, char *out_filename, long run_length, Schema *sch
  * Cannot use more than `buf_size` of heap memory allocated to `buf`.
  */
 void merge_runs(RunIterator* iterators[], int num_runs, char *out_filename,
-                long start_pos, char *buf, long buf_size);
+                long start_pos, long buf_size, RecordCompare rc);

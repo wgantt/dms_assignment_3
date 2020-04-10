@@ -33,12 +33,19 @@ void mk_runs(char *in_filename, char *out_filename, long run_length, Schema *sch
 	int record_idx = 0;
 
 	// The attribute to sort on
-	// TODO: support multi-attribute sort
-	int sort_attr = schema->sort_attrs[0];
+	// TODO: support multi-attribute sorting
+	int sort_attr_idx = schema->sort_attrs[0];
+	Attribute sort_attr = schema->attrs[sort_attr_idx];
+	bool is_numeric = strcmp(sort_attr.type, INTEGER) || strcmp(sort_attr.type, FLOAT);
 
-	// Function for comparing records
-	// TODO: support sorting on numerical attributes
-	auto comp = [sort_attr] (vector<string> r1, vector<string> r2) { return r1[sort_attr] < r2[sort_attr]; };
+	// Lambda for comparing records
+	auto comp = [sort_attr_idx, is_numeric] (vector<string> r1, vector<string> r2) {
+		if (is_numeric) {
+			return atof(r1[sort_attr_idx].c_str()) < atof(r2[sort_attr_idx].c_str());
+		} else {
+			return (bool) r1[sort_attr_idx].compare(r2[sort_attr_idx]);
+		}
+	};
 
 	// Read in the header (we assume that the schema contains the same
 	// information, so this can be ignored).
@@ -96,15 +103,75 @@ void mk_runs(char *in_filename, char *out_filename, long run_length, Schema *sch
 }
 
 void merge_runs(RunIterator* iterators[], int num_runs, char *out_filename,
-                long start_pos, char *buf, long buf_size)
+                long start_pos, long buf_size, RecordCompare rc)
 {
-  // Your implementation
+	// Allocate the output buffer (we assume it's unallocated to begin with)
+	char* buf = new char[buf_size];
+
+	// Open the output file for writing
+	ofstream out(out_filename);
+	if (!out.is_open()) {
+		cerr << "Unable to open output file for merging runs" << endl;
+		exit(1);
+	}
+
+	// Initialize priority queue for k-way merge
+	BufRecordCompare brc {rc};
+	MergePriorityQueue pq(brc);
+
+	// Initialize priority queue with the first record in each buffer
+	BufRecord cur_record;
+	for (int i = 0; i < num_runs; i++) {
+		cur_record.data = iterators[i]->next();
+		cur_record.buf_idx = i;
+		pq.push(cur_record);
+		cout << cur_record.data << endl;
+	}
+
+	cout << endl << endl;
+
+	while (!pq.empty()) {
+		cout << pq.top().data << endl;
+		pq.pop();
+	}
+
+	// Continue merging records until there are no more
+	BufRecord next_record;
+	while (!pq.empty()) {
+
+		// Pop the next record from the top of the priority queue
+		BufRecord cur_record = pq.top();
+		pq.pop();
+
+		// Check the buffer that this record came from to see whether
+		// it contains any more records. If it does, increment the
+		// iterator for that buffer and add the next record to the queue
+		if (iterators[cur_record.buf_idx]->has_next()) {
+			next_record.data = iterators[cur_record.buf_idx]->next();
+			next_record.buf_idx = cur_record.buf_idx;
+			pq.push(next_record);
+		}
+
+		// Copy it into the output buffer
+		strcat(buf, cur_record.data);
+
+		// If the output buffer is full (or nearly so), flush it to disk and clear the buffer
+		if (strlen(buf) + strlen(cur_record.data) > buf_size) {
+			memset(buf,0,buf_size);
+		}
+	}
+
+	cout << "pq is now empty" << endl;
+
+	// Close the output file and ree the output buffer
+	out.close();
+	free(buf);
 }
 
 RunIterator::RunIterator(char *filename, long start_pos, long run_length, long buf_size,
               Schema *schema) {
 
-	// Initialize member variables
+	// Initialize member variables (see library.h for descriptions of each)
 	this->filename = filename;
 	this->start_pos = start_pos;
 	this->run_length = run_length;
