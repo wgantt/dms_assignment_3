@@ -2,7 +2,7 @@
 
 using namespace std;
 
-void mk_runs(char *in_filename, char *out_filename, long run_length, Schema *schema)
+int mk_runs(char *in_filename, char *out_filename, long run_length, Schema *schema)
 {
   	// Streams for reading in data and writing sorted runs
 	ifstream in_file(in_filename);
@@ -32,18 +32,21 @@ void mk_runs(char *in_filename, char *out_filename, long run_length, Schema *sch
 	// The global index of the current record (across all runs)
 	int record_idx = 0;
 
+	// The number of runs created
+	int num_runs = 0;
+
 	// The attribute to sort on
 	// TODO: support multi-attribute sorting
 	int sort_attr_idx = schema->sort_attrs[0];
 	Attribute sort_attr = schema->attrs[sort_attr_idx];
-	bool is_numeric = strcmp(sort_attr.type, INTEGER) || strcmp(sort_attr.type, FLOAT);
+	bool is_numeric = (strcmp(sort_attr.type, INTEGER) == 0) || (strcmp(sort_attr.type, FLOAT) == 0);
 
 	// Lambda for comparing records
 	auto comp = [sort_attr_idx, is_numeric] (vector<string> r1, vector<string> r2) {
 		if (is_numeric) {
 			return atof(r1[sort_attr_idx].c_str()) < atof(r2[sort_attr_idx].c_str());
 		} else {
-			return (bool) r1[sort_attr_idx].compare(r2[sort_attr_idx]);
+			return r1[sort_attr_idx] < r2[sort_attr_idx];
 		}
 	};
 
@@ -69,8 +72,9 @@ void mk_runs(char *in_filename, char *out_filename, long run_length, Schema *sch
 				out_file << endl;
 			}
 
-			// clear the run vector
+			// clear the run vector, increment the number of runs
 			run_records.clear();
+			num_runs++;
 		}
 
 		// Read in the attributes of the record
@@ -97,9 +101,15 @@ void mk_runs(char *in_filename, char *out_filename, long run_length, Schema *sch
 		out_file << endl;
 	}
 
+	if (!run_records.empty()) {
+		num_runs++;
+	}
+
 	// Close streams
 	in_file.close();
 	out_file.close();
+
+	return num_runs;
 }
 
 void merge_runs(RunIterator* iterators[], int num_runs, char *out_filename,

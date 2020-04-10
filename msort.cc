@@ -21,9 +21,6 @@ int main(int argc, char* argv[]) {
   int k = atoi(argv[5]);
   string sort_attribute(argv[6]); // assuming a single sort attribute for now
 
-  // Determine allowed buffer size, given mem_capacity and k
-  int buf_size = mem_capacity / k;
-
   // Parse the schema JSON file
   Json::Value json_schema;
   Json::Reader json_reader;
@@ -76,27 +73,43 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  // Figure out how to determine run_length dynamically
-  int run_length = 10;
-  int num_runs = 10;
+  // k input buffers for merging + 1 output buffer
+  int buf_size = mem_capacity / (k + 1);
+
+  // The length of a run is measured in # of records and is
+  // determined by the size of the buffer and the total length
+  // of a record (+1 for null-terminating character)
+  int run_length = buf_size / (schema.total_record_length + 1);
 
   // First phase: Make the runs
-  mk_runs(input_file, output_file, run_length, &schema);
+  int num_runs = mk_runs(input_file, output_file, run_length, &schema);
+
+  cout << "buf_size : " << buf_size << ", run_length : " << run_length << ", num_runs : " << num_runs << endl;
 
   // Create run iterators for in-memory sort
-  RunIterator* iters[10];
-  for (int i = 0; i < 10; i++) {
-    iters[i] = new RunIterator("new.out", 270 * i, run_length, 260, &schema);
+  RunIterator* iters[num_runs];
+  for (int i = 0; i < num_runs; i++) {
+    iters[i] = new RunIterator(output_file, (buf_size + run_length) * i, run_length, buf_size, &schema);
   }
+
+  // for (int i = 0; i < num_runs; i++) {
+  //   while(iters[i]->has_next()) {
+  //     cout << iters[i]->next() << endl;
+  //   }
+  //   cout << endl;
+  // }
 
   // Second phase: Do in-memory sort
   Attribute sort_attr = schema.attrs[schema.sort_attrs[0]];
   bool is_numeric = strcmp(sort_attr.type, INTEGER) || strcmp(sort_attr.type, FLOAT);
   RecordCompare rc {sort_attr.offset, sort_attr.length, is_numeric};
-  merge_runs(iters, num_runs, "new.out", 0, 270, rc);
+
+  // YOU MIGHT HAVE TO DO THIS MULTIPLE TIMES --- NEED A LOOP
+  merge_runs(iters, num_runs, output_file, 0, buf_size, rc);
 
   // Free the iterators
-  for (int i = 0; i < 10; i++) {
+  // TODO: free schema too
+  for (int i = 0; i < num_runs; i++) {
     free(iters[i]);
   }
   

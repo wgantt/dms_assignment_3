@@ -167,7 +167,7 @@ public:
  * Creates sorted runs of length `run_length` in
  * the `out_fp`.
  */
-void mk_runs(char *in_filename, char *out_filename, long run_length, Schema *schema);
+int mk_runs(char *in_filename, char *out_filename, long run_length, Schema *schema);
 
 /**
  * Merge runs given by the `iterators`.
