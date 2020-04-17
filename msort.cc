@@ -84,33 +84,72 @@ int main(int argc, char* argv[]) {
   // First phase: Make the runs
   int num_runs = mk_runs(input_file, output_file, run_length, &schema);
 
-  cout << "buf_size : " << buf_size << ", run_length : " << run_length << ", num_runs : " << num_runs << endl;
+  // The number of passes we have to do for the merge is log_k(num_runs)
+  int num_passes = ceil(log(num_runs) / log(k));
 
-  // Create run iterators for in-memory sort
-  RunIterator* iters[num_runs];
-  for (int i = 0; i < num_runs; i++) {
-    iters[i] = new RunIterator(output_file, (buf_size + run_length) * i, run_length, buf_size, &schema);
-  }
-
-  // for (int i = 0; i < num_runs; i++) {
-  //   while(iters[i]->has_next()) {
-  //     cout << iters[i]->next() << endl;
-  //   }
-  //   cout << endl;
-  // }
+  cout << "buf_size : " << buf_size << ", run_length : " << run_length << 
+        ", num_runs : " << num_runs <<", num_passes : " << num_passes << endl;
 
   // Second phase: Do in-memory sort
+
+  // The attribute to sort on
   Attribute sort_attr = schema.attrs[schema.sort_attrs[0]];
-  bool is_numeric = strcmp(sort_attr.type, INTEGER) || strcmp(sort_attr.type, FLOAT);
+
+  // Indicates whether the sort attirubte is a numeric value
+  bool is_numeric = (strcmp(sort_attr.type, INTEGER) == 0) || (strcmp(sort_attr.type, FLOAT) == 0);
+
+  // Struct for comparing records
   RecordCompare rc {sort_attr.offset, sort_attr.length, is_numeric};
 
-  // YOU MIGHT HAVE TO DO THIS MULTIPLE TIMES --- NEED A LOOP
-  merge_runs(iters, num_runs, output_file, 0, buf_size, rc);
+  // Array for the k input buffers
+  RunIterator* iters[k];
 
-  // Free the iterators
-  // TODO: free schema too
-  for (int i = 0; i < num_runs; i++) {
-    free(iters[i]);
+  // The number of runs that have been sorted so far on the current pass
+  int runs_sorted = 0;
+
+  // The number of buffers required for the current merge operation
+  // (This is k, except at the very end of the list of runs)
+  int buffers_needed = k;
+
+  // The starting position in the input file for the merge operation
+  int merge_start_pos = 0;
+
+  // Do one pass of the sort
+  while (runs_sorted != num_runs) {
+
+    // The number of runs remaining to be sorted
+    int runs_remaining = num_runs - runs_sorted;
+
+    // The number of buffers we actually need for the current merge iteration.
+    // This will be < k when we reach the end of the input file.
+    buffers_needed = runs_remaining < k ? runs_remaining : k;
+
+    // Allocate the buffers needed to merge these runs
+    for (int j = 0; j < buffers_needed; j++) {
+
+      // The start position for the current run
+      int start_pos = (run_length * (schema.total_record_length + 2)) * runs_sorted;
+
+      // If this is the start position for the first of the runs, this will
+      // also be the start position for the current merge operation.
+      if (j == 0) {
+        merge_start_pos = start_pos;
+      }
+
+      // Allocate the buffer for this run
+      iters[j] = new RunIterator(output_file, start_pos, run_length, buf_size, &schema);
+
+      // The number of runs that have been sorted so far. 
+      runs_sorted++;
+    }
+
+    // Merge the runs
+    merge_runs(iters, buffers_needed, "temp.txt", merge_start_pos, buf_size, rc);
+
+    // Free the buffers
+    for (int j = 0; j < buffers_needed; j++) {
+      free(iters[j]);
+    }
   }
   
   return 0;

@@ -115,15 +115,26 @@ int mk_runs(char *in_filename, char *out_filename, long run_length, Schema *sche
 void merge_runs(RunIterator* iterators[], int num_runs, char *out_filename,
                 long start_pos, long buf_size, RecordCompare rc)
 {
-	// Allocate the output buffer (we assume it's unallocated to begin with)
-	char* buf = new char[buf_size];
 
 	// Open the output file for writing
-	ofstream out(out_filename);
+	ofstream out(out_filename, ios::app);
 	if (!out.is_open()) {
 		cerr << "Unable to open output file for merging runs" << endl;
 		exit(1);
 	}
+
+	// If there's exactly one run to be merged, just write it directly
+	// to the output file, since it's already sorted
+	if (num_runs == 1) {
+		while (iterators[0]->has_next()) {
+			out << iterators[0]->next() << endl;
+		}
+		out.close();
+		return;
+	}
+
+		// Allocate the output buffer (we assume it's unallocated to begin with)
+	char* buf = new char[buf_size];
 
 	// Initialize priority queue for k-way merge
 	BufRecordCompare brc {rc};
@@ -191,6 +202,9 @@ RunIterator::RunIterator(char *filename, long start_pos, long run_length, long b
 	this->record_idx = 0;
 	this->schema = schema;
 	this->buf = new char[buf_size];
+
+	// TODO: figure out a way to get the current record without having
+	// to allocate this separate buffer
 	this->cur_record = new char[this->schema->total_record_length + 1];
 
 	// Open the file for reading
@@ -206,6 +220,8 @@ RunIterator::RunIterator(char *filename, long start_pos, long run_length, long b
 		cerr << "Buffer size is too small to store all records in run" << endl;
 		exit(1);
 	}
+
+	cout << "buf can accommodate " << buf_size / (schema->total_record_length) << " records" << endl;
 
 	// Set the start position within the file. We assume that
 	// the start position lands us at the beginning of a record.

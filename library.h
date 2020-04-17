@@ -5,10 +5,11 @@
 #include <vector>
 #include <queue>
 #include <functional>
+#include <cmath>
 
 using namespace std;
 
-// ADD NAMED CONSTANTS FOR ATTRIBUTE TYPES
+// Named constants for attribute
 static const char* STRING = "string";
 static const char* INTEGER = "integer";
 static const char* FLOAT = "float";
