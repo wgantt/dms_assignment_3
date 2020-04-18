@@ -76,13 +76,20 @@ int main(int argc, char* argv[]) {
   // k input buffers for merging + 1 output buffer
   int buf_size = mem_capacity / (k + 1);
 
-  // The length of a run is measured in # of records and is
+  // The length of a run is measured in # of records and is initially
   // determined by the size of the buffer and the total length
   // of a record (+1 for null-terminating character)
   int run_length = buf_size / (schema.total_record_length + 1);
 
+  // The run length for the previous pass
+  int prev_run_length = run_length;
+
+  // Helper files for reading and writing runs
+  char* helper = (char*) "helper.txt";
+  char* helper2 = (char*) "helper2.txt";
+
   // First phase: Make the runs
-  int num_runs = mk_runs(input_file, output_file, run_length, &schema);
+  int num_runs = mk_runs(input_file, helper, run_length, &schema);
 
   // The number of passes we have to do for the merge is log_k(num_runs)
   int num_passes = ceil(log(num_runs) / log(k));
@@ -114,42 +121,64 @@ int main(int argc, char* argv[]) {
   // The starting position in the input file for the merge operation
   int merge_start_pos = 0;
 
-  // Do one pass of the sort
-  while (runs_sorted != num_runs) {
+  // TODO: comment this
+  char* curr_pass_input = helper;
+  char* curr_pass_output = helper2;
 
-    // The number of runs remaining to be sorted
-    int runs_remaining = num_runs - runs_sorted;
+  // Repeat for the required number of passes
+  for (int pass = 0; pass < num_passes; pass++) {
 
-    // The number of buffers we actually need for the current merge iteration.
-    // This will be < k when we reach the end of the input file.
-    buffers_needed = runs_remaining < k ? runs_remaining : k;
+    // Do one pass of the sort
+    while (runs_sorted != num_runs) {
 
-    // Allocate the buffers needed to merge these runs
-    for (int j = 0; j < buffers_needed; j++) {
+      // The number of runs remaining to be sorted
+      int runs_remaining = num_runs - runs_sorted;
 
-      // The start position for the current run
-      int start_pos = (run_length * (schema.total_record_length + 2)) * runs_sorted;
+      // The number of buffers we actually need for the current merge iteration.
+      // This will be < k when we reach the end of the input file.
+      buffers_needed = runs_remaining < k ? runs_remaining : k;
 
-      // If this is the start position for the first of the runs, this will
-      // also be the start position for the current merge operation.
-      if (j == 0) {
-        merge_start_pos = start_pos;
+      // Allocate the buffers needed to merge these runs
+      for (int j = 0; j < buffers_needed; j++) {
+
+        // The start position for the current run
+        int start_pos = (run_length * (schema.total_record_length + 2)) * runs_sorted;
+
+        // If this is the start position for the first of the runs, this will
+        // also be the start position for the current merge operation.
+        if (j == 0) {
+          merge_start_pos = start_pos;
+        }
+
+        // Allocate the buffer for this run
+        iters[j] = new RunIterator(curr_pass_input, start_pos, run_length, buf_size, &schema);
+
+        // The number of runs that have been sorted so far. 
+        runs_sorted++;
       }
 
-      // Allocate the buffer for this run
-      iters[j] = new RunIterator(output_file, start_pos, run_length, buf_size, &schema);
+      // Merge the runs
+      merge_runs(iters, buffers_needed, curr_pass_output, merge_start_pos, buf_size, rc);
 
-      // The number of runs that have been sorted so far. 
-      runs_sorted++;
+      // Free the buffers
+      for (int j = 0; j < buffers_needed; j++) {
+        free(iters[j]);
+      }
     }
 
-    // Merge the runs
-    merge_runs(iters, buffers_needed, "temp.txt", merge_start_pos, buf_size, rc);
+    // Runs are now k times their previous length
+    run_length *= k;
 
-    // Free the buffers
-    for (int j = 0; j < buffers_needed; j++) {
-      free(iters[j]);
-    }
+    // Update the number of runs for the next iteration
+    num_runs /= k;
+
+    // Reset the number of sorted runs
+    runs_sorted = 0;
+
+    // Swap input and output files
+    char* temp = curr_pass_input;
+    curr_pass_input = curr_pass_output;
+    curr_pass_output = temp;
   }
   
   return 0;

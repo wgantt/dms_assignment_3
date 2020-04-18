@@ -124,17 +124,28 @@ public:
   // specified as a record index
   long start_pos;
 
+  // The start position of the next section of the run
+  // (necessary only if the entire run does not fit in the
+  // buffer)
+  long next_section_pos;
+
   // The number of records in the run
   long run_length;
 
-  // The size of the buffer used to read the run
+  // The size of the buffer (in bytes) used to read the run
   long buf_size;
+
+  // The number of records that can fit in the buffer
+  long buf_record_capacity;
 
   // The buffer
   char *buf;
 
-  // Current record index within the buffer
+  // Current record index within the RUN
   long record_idx;
+
+  // Current record index within the BUFFER
+  long buf_record_idx;
 
   // The record schema
   Schema *schema;
