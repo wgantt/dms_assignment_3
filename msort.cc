@@ -128,6 +128,11 @@ int main(int argc, char* argv[]) {
   // Repeat for the required number of passes
   for (int pass = 0; pass < num_passes; pass++) {
 
+    // If this is the final pass, ensure we're writing to the output file
+    if (pass == num_passes - 1) {
+      curr_pass_output = output_file;
+    }
+
     // Do one pass of the sort
     while (runs_sorted != num_runs) {
 
@@ -142,7 +147,7 @@ int main(int argc, char* argv[]) {
       for (int j = 0; j < buffers_needed; j++) {
 
         // The start position for the current run
-        int start_pos = (run_length * (schema.total_record_length + 2)) * runs_sorted;
+        int start_pos = (run_length * (schema.total_record_length + 1)) * runs_sorted;
 
         // If this is the start position for the first of the runs, this will
         // also be the start position for the current merge operation.
@@ -170,7 +175,7 @@ int main(int argc, char* argv[]) {
     run_length *= k;
 
     // Update the number of runs for the next iteration
-    num_runs /= k;
+    num_runs = ceil((double) num_runs / k);
 
     // Reset the number of sorted runs
     runs_sorted = 0;
@@ -180,6 +185,5 @@ int main(int argc, char* argv[]) {
     curr_pass_input = curr_pass_output;
     curr_pass_output = temp;
   }
-  
   return 0;
 }

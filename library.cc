@@ -77,7 +77,8 @@ int mk_runs(char *in_filename, char *out_filename, long run_length, Schema *sche
 			num_runs++;
 		}
 
-		// Read in the attributes of the record
+		// Read in the attributes of the record (strip trailing whitespace)
+		record = record.substr(0,record.size() - 1);
 		istringstream recordStream(record);
 		while (getline(recordStream, attribute, ',')) {
 			record_vect.push_back(attribute);
@@ -122,6 +123,7 @@ void merge_runs(RunIterator* iterators[], int num_runs, char *out_filename,
 	} else {
 		out = ofstream(out_filename, ios::app);
 	}
+
 	// Open the output file for writing (appending)
 	if (!out.is_open()) {
 		cerr << "Unable to open output file for merging runs" << endl;
@@ -219,8 +221,8 @@ RunIterator::RunIterator(char *filename, long start_pos, long run_length, long b
 	this->buf_record_idx = 0;
 	this->schema = schema;
 	this->buf = new char[buf_size];
-	this->buf_record_capacity = this->buf_size / (this->schema->total_record_length);
-	this->next_section_pos = start_pos + ((schema->total_record_length + 2) * this->buf_record_capacity);
+	this->buf_record_capacity = this->buf_size / (this->schema->total_record_length + 1);
+	this->next_section_pos = start_pos + ((schema->total_record_length + 1) * this->buf_record_capacity);
 
 	// TODO: figure out a way to get the current record without having
 	// to allocate this separate buffer
@@ -233,9 +235,6 @@ RunIterator::RunIterator(char *filename, long start_pos, long run_length, long b
 		exit(1);
 	}
 
-	in_file.seekg(0, in_file.end);
-	cout << in_file.tellg() << endl;
-
 	// Set the start position within the file. We assume that
 	// the start position lands us at the beginning of a record.
 	in_file.seekg(start_pos);
@@ -244,7 +243,7 @@ RunIterator::RunIterator(char *filename, long start_pos, long run_length, long b
 	string record;
 	int i = 0;
 	while (getline(in_file, record) && i < this->buf_record_capacity) {
-		strcat(buf, record.c_str());
+		strncat(buf, record.c_str(), record.size());
 		i++;
 	}
 
@@ -264,9 +263,28 @@ RunIterator::~RunIterator() {
 }
 
 char* RunIterator::next() {
-	// If we've reached the end of the buffer, we need to load in the
-	// next records in the run from disk.
-	if (this->buf_record_idx == this->buf_record_capacity) {
+
+	// Copy record from buffer
+	int record_len = this->schema->total_record_length;
+	strncpy(this->cur_record, &this->buf[buf_record_idx * record_len], record_len);
+
+	// Shouldn't have to explicitly null-terminate,
+	// but didn't take the time to figure a way around it
+	this->cur_record[record_len] = '\0';
+
+	// Increment iterator index
+	this->record_idx++;
+	this->buf_record_idx++;
+
+	// Return record
+	return this->cur_record;
+}
+
+bool RunIterator::has_next() {
+	// If we've reached the end of the buffer, we need to attempt to
+	// load in the next records in the run from disk
+	if (this->buf_record_idx == this->buf_record_capacity && 
+		this->record_idx < this->run_length) {
 
 		// Open the file for reading
 		ifstream in_file(filename);
@@ -285,7 +303,7 @@ char* RunIterator::next() {
 		string record;
 		int i = 0;
 		while (getline(in_file, record) && i < this->buf_record_capacity) {
-			strcat(buf, record.c_str());
+			strncat(buf, record.c_str(), record.size());
 			i++;
 		}
 
@@ -295,30 +313,12 @@ char* RunIterator::next() {
 			this->run_length = this->record_idx + i;
 		}
 
-		// Close the stream for reading
+		// Close the stream
 		in_file.close();
 
 		// Update next_section_pos and reset buf_record_idx
-		this->next_section_pos += ((schema->total_record_length + 2) * this->buf_record_capacity);
+		this->next_section_pos += ((schema->total_record_length + 1) * this->buf_record_capacity);
 		this->buf_record_idx = 0;
 	}
-
-	// Copy record from buffer
-	int record_len = this->schema->total_record_length + 1;
-	strncpy(this->cur_record, &this->buf[buf_record_idx * record_len], record_len);
-
-	// Shouldn't have to explicitly null-terminate,
-	// but didn't take the time to figure a way around it
-	this->cur_record[record_len - 1] = '\0';
-
-	// Increment iterator index
-	this->record_idx++;
-	this->buf_record_idx++;
-
-	// Return record
-	return this->cur_record;
-}
-
-bool RunIterator::has_next() {
 	return this->record_idx < this->run_length;
 }
