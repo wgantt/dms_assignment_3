@@ -166,7 +166,7 @@ int main(int argc, char* argv[]) {
       }
     }
 
-    // Runs are now k times their previous length
+    // Runs are now at most k times their previous length
     run_length *= k;
 
     // Update the number of runs for the next iteration

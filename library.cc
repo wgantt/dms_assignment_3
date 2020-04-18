@@ -115,9 +115,14 @@ int mk_runs(char *in_filename, char *out_filename, long run_length, Schema *sche
 void merge_runs(RunIterator* iterators[], int num_runs, char *out_filename,
                 long start_pos, long buf_size, RecordCompare rc)
 {
-
+	// Open the file for writing
+	ofstream out;
+	if (start_pos == 0) {
+		out = ofstream(out_filename);
+	} else {
+		out = ofstream(out_filename, ios::app);
+	}
 	// Open the output file for writing (appending)
-	ofstream out(out_filename, ios::app);
 	if (!out.is_open()) {
 		cerr << "Unable to open output file for merging runs" << endl;
 		exit(1);
@@ -227,6 +232,9 @@ RunIterator::RunIterator(char *filename, long start_pos, long run_length, long b
 		cout << "could not open " << filename << " for creation of run iterator" << endl;
 		exit(1);
 	}
+
+	in_file.seekg(0, in_file.end);
+	cout << in_file.tellg() << endl;
 
 	// Set the start position within the file. We assume that
 	// the start position lands us at the beginning of a record.
