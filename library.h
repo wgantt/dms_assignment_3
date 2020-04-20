@@ -87,7 +87,7 @@ typedef struct {
     if (is_numeric) {
       return atof(s1_sort_attr.c_str()) < atof(s2_sort_attr.c_str());
     } else {
-      return s1_sort_attr.compare(s2_sort_attr);
+      return s1_sort_attr < s2_sort_attr;
     }
   }
 } RecordCompare;
