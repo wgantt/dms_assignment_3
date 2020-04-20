@@ -81,9 +81,6 @@ int main(int argc, char* argv[]) {
   // of a record (+1 for null-terminating character)
   int run_length = buf_size / (schema.total_record_length + 1);
 
-  // The run length for the previous pass
-  int prev_run_length = run_length;
-
   // Helper files for reading and writing runs
   char* helper = (char*) "helper.txt";
   char* helper2 = (char*) "helper2.txt";

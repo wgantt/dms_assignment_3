@@ -6,11 +6,12 @@
 #include <queue>
 #include <functional>
 #include <cmath>
+#include <cstring>
+#include <algorithm>
 
 using namespace std;
 
-// Named constants for attribute
-static const char* STRING = "string";
+// Named constants for numerical attribute types
 static const char* INTEGER = "integer";
 static const char* FLOAT = "float";
 
