@@ -169,7 +169,7 @@ void merge_runs(RunIterator* iterators[], int num_runs, char *out_filename,
 		pq.pop();
 
 		// Copy it into the output buffer
-		strncat(buf, cur_record.data, sizeof(char) * strlen(cur_record.data));
+		strcat(buf, cur_record.data);
 		records_in_buf++;
 
 		// If the output buffer is full (or nearly so), flush it to disk and clear the buffer
@@ -250,7 +250,7 @@ RunIterator::RunIterator(char *filename, long start_pos, long run_length, long b
 	// If i is ever less than the buf_record_capacity, it means the current
 	// run length is less than we previously thought, so we update it
 	if (i < this->buf_record_capacity) {
-		this->run_length -= this->buf_record_capacity - i;
+		this->run_length = i;
 	}
 
 	// Close the stream for reading
@@ -320,5 +320,6 @@ bool RunIterator::has_next() {
 		this->next_section_pos += ((schema->total_record_length + 1) * this->buf_record_capacity);
 		this->buf_record_idx = 0;
 	}
+	// cout << this->record_idx << ", " << this->buf_record_idx << ", " << this->buf_record_capacity << ", " << this->run_length << endl;
 	return this->record_idx < this->run_length;
 }

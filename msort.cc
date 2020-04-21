@@ -164,7 +164,7 @@ int main(int argc, char* argv[]) {
 
       // Free the buffers
       for (int j = 0; j < buffers_needed; j++) {
-        free(iters[j]);
+        delete iters[j];
       }
     }
 

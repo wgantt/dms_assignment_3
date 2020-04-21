@@ -16,14 +16,7 @@ static const char* INTEGER = "integer";
 static const char* FLOAT = "float";
 
 /**
- * TODO:
- *   - Figure out how, if at all, you intend to use data structures other
- *     than Schema.
- */
-
-/**
- * An attribute schema. You should probably modify
- * this to add your own fields.
+ * The attribute schema
  */
 typedef struct {
   char *name;
