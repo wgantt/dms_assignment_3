@@ -140,8 +140,11 @@ void merge_runs(RunIterator* iterators[], int num_runs, char *out_filename,
 		return;
 	}
 
+	long buf_record_capacity = iterators[0]->buf_record_capacity;
+
 	// Allocate the output buffer (we assume it's unallocated to begin with)
 	char* buf = new char[buf_size];
+	memset(buf,0,buf_size);
 
 	// Initialize priority queue for k-way merge
 	BufRecordCompare brc {rc};
@@ -173,7 +176,7 @@ void merge_runs(RunIterator* iterators[], int num_runs, char *out_filename,
 		records_in_buf++;
 
 		// If the output buffer is full (or nearly so), flush it to disk and clear the buffer
-		if (strlen(buf) + strlen(cur_record.data) > buf_size) {
+		if (records_in_buf == buf_record_capacity) {
 			string s = string(buf);
 			int record_len = strlen(cur_record.data);
 			for (int i = 0; i < records_in_buf; i++) {
@@ -209,24 +212,25 @@ void merge_runs(RunIterator* iterators[], int num_runs, char *out_filename,
 	free(buf);
 }
 
-RunIterator::RunIterator(char *filename, long start_pos, long run_length, long buf_size,
-              Schema *schema) {
+RunIterator::RunIterator(long buf_size, Schema *schema) {
+	this->buf_size = buf_size;
+	this->buf = new char[buf_size];
+	this->schema = schema;
+	this->buf_record_capacity = this->buf_size / (this->schema->total_record_length + 1);
+	this->cur_record = new char[this->schema->total_record_length + 1];
+}
 
-	// Initialize member variables (see library.h for descriptions of each)
+void RunIterator::reset(char *filename, long start_pos, long run_length) {
 	this->filename = filename;
 	this->start_pos = start_pos;
 	this->run_length = run_length;
-	this->buf_size = buf_size;
+	this->next_section_pos = start_pos + ((schema->total_record_length + 1) * this->buf_record_capacity);
 	this->record_idx = 0;
 	this->buf_record_idx = 0;
-	this->schema = schema;
-	this->buf = new char[buf_size];
-	this->buf_record_capacity = this->buf_size / (this->schema->total_record_length + 1);
-	this->next_section_pos = start_pos + ((schema->total_record_length + 1) * this->buf_record_capacity);
 
-	// TODO: figure out a way to get the current record without having
-	// to allocate this separate buffer
-	this->cur_record = new char[this->schema->total_record_length + 1];
+	// clear the buffer and current record
+	memset(this->buf, 0, this->buf_size);
+	memset(this->cur_record, 0, this->schema->total_record_length + 1);
 
 	// Open the file for reading
 	ifstream in_file(filename);
@@ -251,6 +255,8 @@ RunIterator::RunIterator(char *filename, long start_pos, long run_length, long b
 	// run length is less than we previously thought, so we update it
 	if (i < this->buf_record_capacity) {
 		this->run_length = i;
+	} else {
+		this->run_length = run_length;
 	}
 
 	// Close the stream for reading
@@ -297,7 +303,7 @@ bool RunIterator::has_next() {
 		in_file.seekg(next_section_pos);
 
 		// Zero out the buffer for good measure
-		memset(buf,0,strlen(buf));
+		memset(buf,0,buf_size);
 
 		// Read records one by one into the buffer
 		string record;
@@ -320,6 +326,5 @@ bool RunIterator::has_next() {
 		this->next_section_pos += ((schema->total_record_length + 1) * this->buf_record_capacity);
 		this->buf_record_idx = 0;
 	}
-	// cout << this->record_idx << ", " << this->buf_record_idx << ", " << this->buf_record_capacity << ", " << this->run_length << endl;
 	return this->record_idx < this->run_length;
 }
