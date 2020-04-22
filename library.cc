@@ -50,10 +50,6 @@ int mk_runs(char *in_filename, char *out_filename, long run_length, Schema *sche
 		}
 	};
 
-	// Read in the header (we assume that the schema contains the same
-	// information, so this can be ignored).
-	getline(in_file, record);
-
 	// Read in records
 	while (getline(in_file, record)) {
 
@@ -246,4 +242,71 @@ char* RunIterator::next() {
 
 bool RunIterator::has_next() {
 	return this->record_idx < this->run_length;
+}
+
+// void create_db(leveldb::DB *db, const std::string& directory, Schema *schema){
+void create_db(leveldb::DB *db, const char* directory, Schema *schema){
+	CustomComparator cmp(schema); //TODO: schema? &schema?
+	leveldb::Options options;
+	options.create_if_missing = true;
+	options.error_if_exists = true;
+	options.comparator = &cmp; // TODO: parameter for cmp? 
+	// creates a database connection to the directory argument
+	leveldb::Status status = leveldb::DB::Open(options, directory, &db);
+	assert(status.ok());
+}
+
+void insert_leveldb(char *in_filename, leveldb::DB *db, Schema *schema) {
+	
+	// Stream for reading in data
+	ifstream in_file(in_filename);
+
+  	// Error if unable to open stream
+	if (!in_file.is_open()) {
+		cout << "could not open " << in_filename << endl;
+		exit(1);
+	}
+  
+  	// The current record being read
+	string record;
+
+	// Stores the current attribute of the current record
+	string attr;
+
+	// Stores the sorting attribute values of the record
+	string attr_val;
+
+	// Read in the header (we assume that the schema contains the same
+	// information, so this can be ignored).
+	getline(in_file, record);
+
+	// Read in records
+	while (getline(in_file, record)) {
+
+		// Read in the attributes of the record
+		istringstream recordStream(record);
+		int attr_idx = 0;
+		while (getline(recordStream, attr, ',')) {
+			
+			int sort_idx = schema->attr_prio[attr_idx];
+
+			// Attribute is a sorting attribute
+			if (sort_idx > -1) {
+				attr_val = attr_val + attr;
+			}
+
+			std::cout << attr << ' ';
+
+			attr_idx++;
+		}
+		std::cout << attr_val << '\n';
+
+		// store the value stored under its sorting attribute key.
+		leveldb::Slice key = attr_val;
+		leveldb::Slice value = record;
+		db->Put(leveldb::WriteOptions(), key, value);
+	}
+
+	// Close stream
+	in_file.close();
 }
