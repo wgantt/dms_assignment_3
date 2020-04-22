@@ -6,17 +6,13 @@
 #include <queue>
 #include <string>
 #include <functional>
-<<<<<<< HEAD
 #include <algorithm>
 #include <iterator>
 #include <cassert>
 #include "leveldb/db.h"
 #include "leveldb/comparator.h"
-=======
 #include <cmath>
 #include <cstring>
-#include <algorithm>
->>>>>>> 23dee4567b5adc3b4629630367e989ee5a16399a
 
 using namespace std;
 
@@ -194,7 +190,6 @@ int mk_runs(char *in_filename, char *out_filename, long run_length, Schema *sche
  */
 void merge_runs(RunIterator* iterators[], int num_runs, char *out_filename,
                 long start_pos, long buf_size, RecordCompare rc);
-<<<<<<< HEAD
 
 /**
  * A custom comparator subclassing leveldb Comparator class.
@@ -299,5 +294,3 @@ void create_db(leveldb::DB *db, const char* directory, Schema *schema);
  * Scans through the records and insert them one by one into the leveldb index.
  */
 void insert_leveldb(char *in_filename, leveldb::DB *db, Schema *schema);
-=======
->>>>>>> 23dee4567b5adc3b4629630367e989ee5a16399a
