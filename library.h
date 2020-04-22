@@ -6,28 +6,26 @@
 #include <queue>
 #include <string>
 #include <functional>
+<<<<<<< HEAD
 #include <algorithm>
 #include <iterator>
 #include <cassert>
 #include "leveldb/db.h"
 #include "leveldb/comparator.h"
+=======
+#include <cmath>
+#include <cstring>
+#include <algorithm>
+>>>>>>> 23dee4567b5adc3b4629630367e989ee5a16399a
 
 using namespace std;
 
-// ADD NAMED CONSTANTS FOR ATTRIBUTE TYPES
-static const char* STRING = "string";
+// Named constants for numerical attribute types
 static const char* INTEGER = "integer";
 static const char* FLOAT = "float";
 
 /**
- * TODO:
- *   - Figure out how, if at all, you intend to use data structures other
- *     than Schema.
- */
-
-/**
- * An attribute schema. You should probably modify
- * this to add your own fields.
+ * The attribute schema
  */
 typedef struct {
   char *name;
@@ -93,7 +91,7 @@ typedef struct {
     if (is_numeric) {
       return atof(s1_sort_attr.c_str()) < atof(s2_sort_attr.c_str());
     } else {
-      return s1_sort_attr.compare(s2_sort_attr);
+      return s1_sort_attr < s2_sort_attr;
     }
   }
 } RecordCompare;
@@ -131,17 +129,28 @@ public:
   // specified as a record index
   long start_pos;
 
+  // The start position of the next section of the run
+  // (necessary only if the entire run does not fit in the
+  // buffer)
+  long next_section_pos;
+
   // The number of records in the run
   long run_length;
 
-  // The size of the buffer used to read the run
+  // The size of the buffer (in bytes) used to read the run
   long buf_size;
+
+  // The number of records that can fit in the buffer
+  long buf_record_capacity;
 
   // The buffer
   char *buf;
 
-  // Current record index within the buffer
+  // Current record index within the RUN
   long record_idx;
+
+  // Current record index within the BUFFER
+  long buf_record_idx;
 
   // The record schema
   Schema *schema;
@@ -185,6 +194,7 @@ int mk_runs(char *in_filename, char *out_filename, long run_length, Schema *sche
  */
 void merge_runs(RunIterator* iterators[], int num_runs, char *out_filename,
                 long start_pos, long buf_size, RecordCompare rc);
+<<<<<<< HEAD
 
 /**
  * A custom comparator subclassing leveldb Comparator class.
@@ -289,3 +299,5 @@ void create_db(leveldb::DB *db, const char* directory, Schema *schema);
  * Scans through the records and insert them one by one into the leveldb index.
  */
 void insert_leveldb(char *in_filename, leveldb::DB *db, Schema *schema);
+=======
+>>>>>>> 23dee4567b5adc3b4629630367e989ee5a16399a
