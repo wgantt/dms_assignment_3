@@ -26,7 +26,7 @@ int mk_runs(char *in_filename, char *out_filename, long run_length, Schema *sche
 	// Vector for the current record
 	vector<string> record_vect;
 
-	// Vector to hold all records in the current runt
+	// Vector to hold all records in the current run
 	vector<vector<string>> run_records;
 
 	// The global index of the current record (across all runs)
@@ -140,6 +140,7 @@ void merge_runs(RunIterator* iterators[], int num_runs, char *out_filename,
 		return;
 	}
 
+	// The number of records that can be stored in the buffer
 	long buf_record_capacity = iterators[0]->buf_record_capacity;
 
 	// Zero out the output buffer

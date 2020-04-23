@@ -135,7 +135,8 @@ public:
   // The record schema
   Schema *schema;
 
-  // The current record the iterator is pointing to
+  // The current record the iterator is pointing to. We know we technically
+  // shouldn't have this.
   char *cur_record;
 
   /**

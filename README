@@ -1,0 +1,65 @@
+Assignment 3: Sorting
+Will Gantt and Hannah An
+4/22/20
+
+
+Files and Usage
+---------------
+
+  - data_generator.py: Python script used to generate an arbitrary number of
+      of records given a JSON schema.
+  - experiments: Directory containing all the Bash scripts used to run our
+      experiments, as well as the output of those scripts.
+  - json, json.cpp: Files from the jsoncpp library, used for reading the json
+      schema file.
+  - library.cc/.h: Class and function declarations and definitions for the
+      entire program.
+  - Makefile: Self-explanatory.
+  - msort.cc: Code for running msort.
+  - report.pdf: The PDF containing our report for this assignment.
+  - schema_example.json: Provided sample schema that we used for all of our
+      experiments.
+
+  To run msort, first run `make msort` and then execute it as follows:
+
+  ./msort <schema_file> <input_file> <output_file> <mem_capacity> <k> <sort_attribute>
+
+  NOTE: our implementation supports only a single sorting attribute.
+
+Implementation Details
+----------------------
+
+The C++ files are reasonably well-commented and much can be learned about our
+implementation simply by reading through them. However, it will be valuable
+to provide a broad overview here and to discuss certain points that may not 
+be evident from scanning the source code.
+
+For pass 0, the in-memory sort (mk_runs), we used a vector to store the record
+from the current run and used the built-in C++ vector `sort` method. While
+implementing this, we forgot that the instructions requested that this be done
+with a heap-allocated buffer and unfortunately never found the time to go back
+and fix this. The runs are all written to a temporary file "helper.txt."
+
+For subsequent passes, in which progressively longer runs are merged together,
+we allocate the requested k input buffers and the one output buffer, each of
+size buf_size, before doing any of the merging. The buf_size parameter is
+calculated as mem_capacity / (k+1). The input buffers are represented as
+RunIterators, as per the instructions. When performing the merging, we use 
+a priority queue to store the next records in each of the k input buffers to
+be merged. This obviates the need for a linear scan over all k buffers each
+time a record is to be merged (i.e. written to the output buffer). When the
+output buffer is full, it is flushed to the output file and cleared.
+
+In general, we maintain two helper files, "helper.txt" (mentioned above) and
+"helper2.txt". For a given pass, except the last, one of these serves as the
+input and the other serves as the output. Only on the final pass do we
+actually write to the user-specified output file. We're sure there's a way of
+doing this that uses *just* the output file, but figuring out how proved more
+of a headache than we cared to suffer.
+
+Undoubtedly, though, our greatest struggle in this assignment was abiding by
+the memory usage limits. Although msort uses input and output buffers of the
+size dictated by k and by the mem_capacity, and although we used minimal heap
+memory elsewhere, we did not meet the requirement that total program memory
+usage not exceed mem_capacity. We abided by the spirit of it, if not the
+letter.

@@ -115,7 +115,13 @@ int main(int argc, char* argv[]) {
   // The starting position in the input file for the merge operation
   int merge_start_pos = 0;
 
-  // TODO: comment this
+  /**
+   * On a given pass, we read from one file and write to another
+   * (simultaneous reading and writing of the same file doesn't
+   * work here for obvious reasons). The output for the previous
+   * pass becomes the input to the next one. On the final pass,
+   * the output is written to the specified output file.
+   */
   char* curr_pass_input = helper;
   char* curr_pass_output = helper2;
 
@@ -183,11 +189,13 @@ int main(int argc, char* argv[]) {
     curr_pass_output = temp;
   }
 
-  // Free the iterators and the output buffer
+  // Free the iterators, the output buffer, and the schema
   for (int i = 0; i < k; i++) {
     delete iters[i];
   }
   free(output_buffer);
+  free(schema.attrs);
+  free(schema.sort_attrs);
 
   return 0;
 }
