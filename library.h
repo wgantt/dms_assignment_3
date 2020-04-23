@@ -9,8 +9,6 @@
 #include <algorithm>
 #include <iterator>
 #include <cassert>
-#include "leveldb/db.h"
-#include "leveldb/comparator.h"
 #include <cmath>
 #include <cstring>
 
@@ -39,8 +37,6 @@ typedef struct {
 typedef struct {
   int nattrs;
   int* sort_attrs;
-  int* attr_prio;
-  int* prio_attr;
   int n_sort_attrs;
   int total_record_length = 0;
   Attribute* attrs;
@@ -191,106 +187,20 @@ int mk_runs(char *in_filename, char *out_filename, long run_length, Schema *sche
 void merge_runs(RunIterator* iterators[], int num_runs, char *out_filename,
                 long start_pos, long buf_size, RecordCompare rc);
 
-/**
- * A custom comparator subclassing leveldb Comparator class.
- * Compares records by the sorting attributes.
- */
-// TODO: move this class somewhere?
-leveldb::Comparator::~Comparator() = default;
-// namespace {
-class CustomComparator : public leveldb::Comparator {
-  public:
 
-    Schema *schema;
 
-    const char* Name() const { return "CustomComparator"; }
-    //TODO: need to change for additional parameters?
-
-    CustomComparator(Schema *schema);
-
-    int Compare(const leveldb::Slice& a, const leveldb::Slice& b) const {
-      // sorting values in slice converted back to a C++ string
-      std::string key1 = a.ToString();
-      std::string key2 = b.ToString();
-
-      // Storage for sorting attribute values
-      int sort_offsets[schema->n_sort_attrs];
-
-      // offset of an attribute among sorting attributes
-      int offset;
-      int attr_len;
-      int sort_attr_priority;
-      int attr_idx;
-
-      Attribute sort_attr;
-      string s1_sort_attr;
-      string s2_sort_attr;
-      
-      for(int i = 0; i < schema->n_sort_attrs; i++) {
-        sort_attr_priority = schema->sort_attrs[i];
-
-        // Add sorting attribue offset to its corresponding sorting priority/index
-        sort_offsets[sort_attr_priority] = offset;
-
-        attr_idx = schema->prio_attr[sort_attr_priority];
-        attr_len = schema->attrs[attr_idx].length;
-        offset += attr_len;
-      }
-
-      // Compares multiple attributes of two records
-      // in the order of their priority
-      for(int i = 0; i < schema->n_sort_attrs; i++) {
-        attr_idx = schema->prio_attr[i];
-        sort_attr = schema->attrs[attr_idx];
-        attr_len = sort_attr.length;
-
-        s1_sort_attr = key1.substr(offset, attr_len);
-        s2_sort_attr = key2.substr(offset, attr_len);
-
-        bool is_numeric = (strcmp(sort_attr.type, INTEGER) == 0) ||
-                          (strcmp(sort_attr.type, FLOAT) == 0);
-
-        if (is_numeric) {
-          // Handles numerical attributes
-          int val1 = atof(s1_sort_attr.c_str());
-          int val2 = atof(s2_sort_attr.c_str());
-          if (val1 < val2) {
-            return -1;
-          }
-          if (val1 > val2) {
-            return +1;
-          }
-        } else {
-          // Handles string attributes
-          if (s1_sort_attr.compare(s2_sort_attr) < 0){
-            return -1;
-          }
-          if (s1_sort_attr.compare(s2_sort_attr) > 0) {
-            return +1;
-          }
-        }
-      }
-
-      return 0;
-    }
-
-    void FindShortestSeparator(std::string*, const leveldb::Slice&) const {}
-    void FindShortSuccessor(std::string*) const {}
-
-};
-
-CustomComparator::CustomComparator(Schema *schema) {
-  schema = schema;
-}
+// CustomComparator::CustomComparator(Schema *schema) {
+//   schema = schema;
+// }
 // }
 
 /**
  * Creates LevelDB database using custom comparator.
  * If there exists a database named as the file system directory, raise an error.
  */
-void create_db(leveldb::DB *db, const char* directory, Schema *schema); 
+// void create_db(leveldb::DB *db, const char* directory, Schema *schema); 
 
 /**
  * Scans through the records and insert them one by one into the leveldb index.
  */
-void insert_leveldb(char *in_filename, leveldb::DB *db, Schema *schema);
+// void insert_leveldb(char *in_filename, leveldb::DB *db, Schema *schema);
