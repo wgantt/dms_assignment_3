@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
   // The length of a run is measured in # of records and is initially
   // determined by the size of the buffer and the total length
   // of a record (+1 for null-terminating character)
-  int run_length = buf_size / (schema.total_record_length + 1);
+  long run_length = buf_size / (schema.total_record_length + 1);
 
   // Helper files for reading and writing runs
   char* helper = (char*) "helper.txt";
@@ -105,9 +105,6 @@ int main(int argc, char* argv[]) {
   // Struct for comparing records
   RecordCompare rc {sort_attr.offset, sort_attr.length, is_numeric};
 
-  // Array for the k input buffers
-  RunIterator* iters[k];
-
   // The number of runs that have been sorted so far on the current pass
   int runs_sorted = 0;
 
@@ -121,6 +118,12 @@ int main(int argc, char* argv[]) {
   // TODO: comment this
   char* curr_pass_input = helper;
   char* curr_pass_output = helper2;
+
+  // Initialize the k input buffers
+  RunIterator* iters[k];
+  for (int i = 0; i < k; i++) {
+    iters[i] = new RunIterator(buf_size, &schema);
+  }
 
   // Repeat for the required number of passes
   for (int pass = 0; pass < num_passes; pass++) {
@@ -152,8 +155,8 @@ int main(int argc, char* argv[]) {
           merge_start_pos = start_pos;
         }
 
-        // Allocate the buffer for this run
-        iters[j] = new RunIterator(curr_pass_input, start_pos, run_length, buf_size, &schema);
+        // reset the iterator for this run
+        iters[j]->reset(curr_pass_input, start_pos, run_length);
 
         // The number of runs that have been sorted so far. 
         runs_sorted++;
@@ -161,11 +164,6 @@ int main(int argc, char* argv[]) {
 
       // Merge the runs
       merge_runs(iters, buffers_needed, curr_pass_output, merge_start_pos, buf_size, rc);
-
-      // Free the buffers
-      for (int j = 0; j < buffers_needed; j++) {
-        delete iters[j];
-      }
     }
 
     // Runs are now at most k times their previous length
@@ -182,5 +180,11 @@ int main(int argc, char* argv[]) {
     curr_pass_input = curr_pass_output;
     curr_pass_output = temp;
   }
+
+  // Free the iterators
+  for (int i = 0; i < k; i++) {
+    delete iters[i];
+  }
+
   return 0;
 }
