@@ -51,15 +51,6 @@ typedef struct {
 } Schema;
 
 /**
- * A record can defined as a struct with a pointer
- * to the schema and some data. 
- */
-typedef struct {
-  Schema* schema;
-  char* data;
-} Record;
-
-/**
  * Stores a record, along with the index of the input buffer
  * that it came from
  */
@@ -159,14 +150,22 @@ public:
   char *cur_record;
 
   /**
-   * Creates an interator using the `buf_size` to
-   * scan through a run that starts at `start_pos`
-   * with length `run_length`.
+   * Alternative constructor to initialize the iterator without
+   * actually loading the run
    */
-  RunIterator(char *filename, long start_pos, long run_length, long buf_size,
-              Schema *schema);
+  RunIterator(long buf_size, Schema *schema);
 
+  /**
+   * destructor
+   */
   ~RunIterator();
+
+  /**
+   * resets the run iterator without allocating new memory.
+   * The buffer size and schema are inherited from the original
+   * initialization.
+   */
+  void reset(char *filename, long start_pos, long run_length);
 
   /**
    * reads the next record
