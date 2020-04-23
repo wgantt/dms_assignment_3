@@ -119,6 +119,8 @@ int main(int argc, char* argv[]) {
   char* curr_pass_input = helper;
   char* curr_pass_output = helper2;
 
+  char* output_buffer = new char[buf_size];
+
   // Initialize the k input buffers
   RunIterator* iters[k];
   for (int i = 0; i < k; i++) {
@@ -163,7 +165,7 @@ int main(int argc, char* argv[]) {
       }
 
       // Merge the runs
-      merge_runs(iters, buffers_needed, curr_pass_output, merge_start_pos, buf_size, rc);
+      merge_runs(iters, buffers_needed, curr_pass_output, merge_start_pos, buf_size, output_buffer, rc);
     }
 
     // Runs are now at most k times their previous length
@@ -181,10 +183,11 @@ int main(int argc, char* argv[]) {
     curr_pass_output = temp;
   }
 
-  // Free the iterators
+  // Free the iterators and the output buffer
   for (int i = 0; i < k; i++) {
     delete iters[i];
   }
+  free(output_buffer);
 
   return 0;
 }

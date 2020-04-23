@@ -181,4 +181,4 @@ int mk_runs(char *in_filename, char *out_filename, long run_length, Schema *sche
  * Cannot use more than `buf_size` of heap memory allocated to `buf`.
  */
 void merge_runs(RunIterator* iterators[], int num_runs, char *out_filename,
-                long start_pos, long buf_size, RecordCompare rc);
+                long start_pos, long buf_size, char* buf, RecordCompare rc);
