@@ -185,21 +185,3 @@ int mk_runs(char *in_filename, char *out_filename, long run_length, Schema *sche
  */
 void merge_runs(RunIterator* iterators[], int num_runs, char *out_filename,
                 long start_pos, long buf_size, RecordCompare rc);
-
-
-
-// CustomComparator::CustomComparator(Schema *schema) {
-//   schema = schema;
-// }
-// }
-
-/**
- * Creates LevelDB database using custom comparator.
- * If there exists a database named as the file system directory, raise an error.
- */
-// void create_db(leveldb::DB *db, const char* directory, Schema *schema); 
-
-/**
- * Scans through the records and insert them one by one into the leveldb index.
- */
-// void insert_leveldb(char *in_filename, leveldb::DB *db, Schema *schema);
