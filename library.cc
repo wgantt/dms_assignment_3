@@ -26,7 +26,7 @@ int mk_runs(char *in_filename, char *out_filename, long run_length, Schema *sche
 	// Vector for the current record
 	vector<string> record_vect;
 
-	// Vector to hold all records in the current runt
+	// Vector to hold all records in the current run
 	vector<vector<string>> run_records;
 
 	// The global index of the current record (across all runs)
@@ -110,7 +110,7 @@ int mk_runs(char *in_filename, char *out_filename, long run_length, Schema *sche
 }
 
 void merge_runs(RunIterator* iterators[], int num_runs, char *out_filename,
-                long start_pos, long buf_size, RecordCompare rc)
+                long start_pos, long buf_size, char* buf, RecordCompare rc)
 {
 	// Open the file for writing
 	ofstream out;
@@ -136,10 +136,10 @@ void merge_runs(RunIterator* iterators[], int num_runs, char *out_filename,
 		return;
 	}
 
+	// The number of records that can be stored in the buffer
 	long buf_record_capacity = iterators[0]->buf_record_capacity;
 
-	// Allocate the output buffer (we assume it's unallocated to begin with)
-	char* buf = new char[buf_size];
+	// Zero out the output buffer
 	memset(buf,0,buf_size);
 
 	// Initialize priority queue for k-way merge
@@ -205,7 +205,6 @@ void merge_runs(RunIterator* iterators[], int num_runs, char *out_filename,
 
 	// Close the output file and ree the output buffer
 	out.close();
-	free(buf);
 }
 
 RunIterator::RunIterator(long buf_size, Schema *schema) {

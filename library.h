@@ -30,8 +30,8 @@ typedef struct {
 
 /**
  * A record schema contains an array of attribute
- * schema `attrs`, as well as an array of sort-by 
- * attributes (represented as the indices of the 
+ * schema `attrs`, as well as an array of sort-by
+ * attributes (represented as the indices of the
  * `attrs` array).
  */
 typedef struct {
@@ -138,7 +138,8 @@ public:
   // The record schema
   Schema *schema;
 
-  // The current record the iterator is pointing to
+  // The current record the iterator is pointing to. We know we technically
+  // shouldn't have this.
   char *cur_record;
 
   /**
@@ -184,4 +185,4 @@ int mk_runs(char *in_filename, char *out_filename, long run_length, Schema *sche
  * Cannot use more than `buf_size` of heap memory allocated to `buf`.
  */
 void merge_runs(RunIterator* iterators[], int num_runs, char *out_filename,
-                long start_pos, long buf_size, RecordCompare rc);
+                long start_pos, long buf_size, char* buf, RecordCompare rc);
