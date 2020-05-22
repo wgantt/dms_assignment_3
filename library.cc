@@ -49,7 +49,7 @@ int mk_runs(char *in_filename, char *out_filename, long run_length, Schema *sche
 			return r1[sort_attr_idx] < r2[sort_attr_idx];
 		}
 	};
-
+	
 	// Read in the header (we assume that the schema contains the same
 	// information, so this can be ignored).
 	getline(in_file, record);

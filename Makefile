@@ -1,7 +1,7 @@
 CC = g++
 CCFLAGS = -O3 -Wall -g --std=c++11
 LEVELDB_DIR = ../leveldb
-LEVELDB_OPTS = -I $(LEVELDB_DIR)/include -pthread $(LEVELDB_DIR)/build/libleveldb.a
+LEVELDB_OPTS = -I $(LEVELDB_DIR)/include -lpthread $(LEVELDB_DIR)/build/libleveldb.a
 JSONCPP_OPTS = -I .
 
 all: library.o jsoncpp.o msort bsort
@@ -16,7 +16,7 @@ msort: msort.cc jsoncpp.o library.o
 	$(CC) -o $@ $^ $(CCFLAGS)
 
 bsort: bsort.cc jsoncpp.o
-	$(CC) -o $@ $^ $(CCFLAGS) $(LEVELDB_OPTS)
+	$(CC) -o $@ $^ $(CCFLAGS) $(LEVELDB_OPTS) $(JSONCPP_OPTS)
 	
 clean:
 	rm -rf *.o msort bsort msort.dSYM bsort.dSYM

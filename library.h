@@ -4,10 +4,13 @@
 #include <fstream>
 #include <vector>
 #include <queue>
+#include <string>
 #include <functional>
+#include <algorithm>
+#include <iterator>
+#include <cassert>
 #include <cmath>
 #include <cstring>
-#include <algorithm>
 
 using namespace std;
 
@@ -27,8 +30,8 @@ typedef struct {
 
 /**
  * A record schema contains an array of attribute
- * schema `attrs`, as well as an array of sort-by 
- * attributes (represented as the indices of the 
+ * schema `attrs`, as well as an array of sort-by
+ * attributes (represented as the indices of the
  * `attrs` array).
  */
 typedef struct {
